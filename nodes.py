@@ -7,7 +7,9 @@ class Node:
         self._connected_to = []
         self._index = i
         self._nb_connections = 0
-        self._food = 0
+        self._food = (np.random.randint(1, 100) - 80) * 100
+        if self._food < 0:
+            self._food = 0
         self._is_nest = False
         self._distances = []
 

@@ -92,6 +92,9 @@ def main():
             if node._is_nest:
                 color = (9, 132, 227)
                 size += 6
+            if node._food > 0:
+                color = (0, 184, 148)
+                size += node._food / 200
             pygame.draw.circle(screen, color, (node._x + 140, node._y + 70), size)
 
         for ant in ants:
