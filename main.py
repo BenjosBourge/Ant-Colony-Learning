@@ -27,17 +27,19 @@ def setup_nodes(nb_nodes, nb_closest, nb_neighbors):
     for node in nodes:
         node.set_connection_distances()
 
-    nodes[np.random.randint(0, nb_nodes)]._is_nest = True
+    r = np.random.randint(0, nb_nodes)
+    nodes[r]._is_nest = True
+    nodes[r]._food = 0
 
     # error management
     for node in nodes:
         for c in node._connected_to:  # every connection
             found = False
-            for cc in c._connected_to:
-                if cc._index == node._index:
+            for cc in c._link._connected_to:
+                if cc._link._index == node._index:
                     found = True
             if not found:
-                print(node._index, " DOESN'T HAVE ITSELF IN CONNECTED ", c._index)
+                print(node._index, " DOESN'T HAVE ITSELF IN CONNECTED ", c._link._index)
 
     l = 0
     for node in nodes:
@@ -84,7 +86,15 @@ def main():
 
         for node in nodes:
             for n in node._connected_to:
-                pygame.draw.line(screen, (255, 255, 255), (node._x + 140, node._y + 70), (n._x + 140, n._y + 70), width=1)
+                color = (255, 255, 255)
+                p = n._pheromones
+                if p > 100:
+                    p = 100
+                ratio = float(p) / float(100)
+                cr = color[0] * (1. - ratio) + 253. * (ratio)
+                cg = color[1] * (1. - ratio) + 121. * (ratio)
+                cb = color[2] * (1. - ratio) + 168. * (ratio)
+                pygame.draw.line(screen, (cr, cg, cb), (node._x + 140, node._y + 70), (n._link._x + 140, n._link._y + 70), width=1)
 
         for node in nodes:
             color = (255, 255, 255)
@@ -107,6 +117,8 @@ def main():
                 x = x + (dest_x - x) * (1 - (ant._distanceLeft / ant._maxDistance))
                 y = y + (dest_y - y) * (1 - (ant._distanceLeft / ant._maxDistance))
             color = (108, 92, 231)
+            if ant._carrying_food:
+                color = (232, 67, 147)
             size = 3
             pygame.draw.circle(screen, color, (x, y), size)
 
