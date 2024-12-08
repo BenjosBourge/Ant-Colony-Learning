@@ -4,6 +4,7 @@ class Link:
     def __init__(self, link):
         self._link = link
         self._pheromones = 1
+        self._new_pheromones = 1
         self._distance = 0
 
 class Node:
@@ -55,3 +56,12 @@ class Node:
             dy = n._link._y - self._y
             n._distance = np.sqrt(dx * dx + dy * dy)
         self._nb_connections = len(self._connected_to)
+
+    def decay(self, value):
+        for l in self._connected_to:
+            l._new_pheromones = l._new_pheromones * value
+
+    def update_end_iteration(self):
+        for l in self._connected_to:
+            l._pheromones = l._new_pheromones
+        self.decay(0.5)

@@ -51,10 +51,16 @@ def setup_nodes(nb_nodes, nb_closest, nb_neighbors):
     return nodes
 
 
-def setup_ants(nodes, nb_ants):
+def setup_ants(nodes, nb_ants, start_nest):
     ants = []
+    r = 0
+    if start_nest:
+        for i in range(len(nodes)):
+            if nodes[i]._is_nest:
+                r = i
     for i in range(nb_ants):
-        r = np.random.randint(0, len(nodes))
+        if not start_nest:
+            r = np.random.randint(0, len(nodes))
         ants.append(Ant(nodes[r]))
     return ants
 
@@ -64,9 +70,15 @@ def main():
     nb_node = 100
     nb_closest = 5
     nb_neighbors = 2
-    nb_ants = 200
+    nb_ants = 100
+    start_nest = True
     nodes = setup_nodes(nb_node, nb_closest, nb_neighbors)
-    ants = setup_ants(nodes, nb_ants)
+    ants = setup_ants(nodes, nb_ants, start_nest)
+
+    score = 0
+    mean_score = 0
+    all_time_score = 0
+    last_score = 0
 
     pygame.init()
 
@@ -75,6 +87,11 @@ def main():
     font = pygame.font.SysFont(None, 24)
     screen = setup_screen(height, width)
 
+    # random ants
+    np.random.seed()
+    it = 0
+    time_spent = 0.0
+
     running = True
     while running:
         for event in pygame.event.get():
@@ -82,12 +99,15 @@ def main():
                 running = False
         deltaTime = clock.get_time() / 1000
 
+        time_spent += deltaTime
+
         screen.fill((30, 30, 30))
 
         for node in nodes:
             for n in node._connected_to:
                 color = (255, 255, 255)
                 p = n._pheromones
+                p = abs(p)
                 if p > 100:
                     p = 100
                 ratio = float(p) / float(100)
@@ -107,8 +127,12 @@ def main():
                 size += node._food / 200
             pygame.draw.circle(screen, color, (node._x + 140, node._y + 70), size)
 
+        new_ants = []
         for ant in ants:
-            ant.turn(100 * deltaTime)
+            res = ant.turn(1000 * deltaTime)
+            if res == 0:
+                new_ants.append(ant)
+            score += res
             x = ant._current_node._x + 140
             y = ant._current_node._y + 70
             if ant._in_path:
@@ -121,15 +145,40 @@ def main():
                 color = (232, 67, 147)
             size = 3
             pygame.draw.circle(screen, color, (x, y), size)
+        ants = new_ants
+
+        if time_spent > 5. or len(ants) == 0:
+            for node in nodes:
+                node.update_end_iteration()
+            time_spent = 0.0
+            ants = setup_ants(nodes, nb_ants, start_nest)
+            it += 1
+            all_time_score += score
+            mean_score = all_time_score / it
+            last_score = score
+            score = 0
 
         fps = int(clock.get_fps())
         fps_text = font.render(f"FPS: {fps}", True, (255, 255, 255))
         screen.blit(fps_text, (10, 10))
 
+        fps_text = font.render(f"Score: {all_time_score}", True, (255, 255, 255))
+        screen.blit(fps_text, (100, 10))
+
+        fps_text = font.render(f"Last Score: {last_score}", True, (255, 255, 255))
+        screen.blit(fps_text, (250, 10))
+
+        fps_text = font.render(f"This Score: {score}", True, (255, 255, 255))
+        screen.blit(fps_text, (400, 10))
+
+        fps_text = font.render(f"Mean Score: {mean_score}", True, (255, 255, 255))
+        screen.blit(fps_text, (550, 10))
+
         pygame.display.flip()
         clock.tick(60)
 
     pygame.quit()
+
 
 if __name__ == '__main__':
     main()
